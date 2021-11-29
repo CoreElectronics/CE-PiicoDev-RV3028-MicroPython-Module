@@ -8,9 +8,11 @@
 #     - Configure trickle charger for onboard supercap
 #     - Configure frequency of CLK output pin
 
-from machine import I2C, Pin
+from PiicoDev_Unified import *
 
-_ADDR = 0x52
+compat_str = '\nUnified PiicoDev library out of date.  Get the latest module: https://piico.dev/unified \n'
+
+_I2C_ADDRESS = 0x52
 _SEC = 0x00
 _MIN = 0x01
 _HOUR = 0x02
@@ -25,7 +27,7 @@ _ECTRL = 0x13
 _SECTS = 0x15
 _DAYTS = 0x18
 _UNIX = 0x1B
-_ID = 0x28
+_REG_ID = 0x28
 _EE_CLKOUT = 0x35
 _EE_BACKUP = 0x37
 
@@ -59,17 +61,23 @@ def _bcdDecode(val):
 def _bcdEncode(val):
     return ((val//10) << 4) | (val % 10)
 
-class rv3028():
-    def __init__(self, i2c = None): 
-        if isinstance(i2c, I2C) is False:
-            print("RV3028 requires a valid i2c device")
-            raise TypeError
-        self.i2cDev = i2c
-        
+class PiicoDev_RV3028(object):
+    def __init__(self, bus=None, freq=None, sda=None, scl=None, addr=_I2C_ADDRESS):
         try:
-            part = int(i2c.readfrom_mem(_ADDR, _ID, 1))
+            if compat_ind >= 1:
+                pass
+            else:
+                print(compat_str)
+        except:
+            print(compat_str)
+
+        self.i2c = create_unified_i2c(bus=bus, freq=freq, sda=sda, scl=scl)
+        self.addr = addr
+ 
+        try:
+            part = int(self.i2c.readfrom_mem(self.addr, _REG_ID, 1))
         except Exception as e:
-            print("Failed to find RV3028 on i2c bus") 
+            print(i2c_err_str.format(self.addr))
             raise e
                
         self.setBatterySwitchover()
@@ -78,7 +86,7 @@ class rv3028():
         
     def _read(self, reg, N):
         try:
-            tmp = int.from_bytes(self.i2cDev.readfrom_mem(_ADDR, reg, N), 'little')
+            tmp = int.from_bytes(self.i2c.readfrom_mem(self.addr, reg, N), 'little')
         except:
             print("Error reading from RV3028")
             return float('NaN')
@@ -86,7 +94,7 @@ class rv3028():
         
     def _write(self, reg, data):
         try:
-            self.i2cDev.writeto_mem(_ADDR, reg, data)
+            self.i2c.writeto_mem(self.addr, reg, data)
         except:
             print("Error writing to RV3028")
             return float('NaN')
@@ -282,7 +290,23 @@ class rv3028():
     def timestamp(self):
         time = self.getTime()
         date = self.getDate()
-        timestamp = str(date[2]+2000) + "-" + str(date[1]) + "-" + str(date[0]) + " " + str(time[0]) + ":" + str(time[1]) + ":" + str(time[2])
+        strYear = str(date[2]+2000)
+        strMonth = str(date[1])
+        if (date[1] < 10):
+            strMonth = '0' + strMonth
+        strDay = str(date[0])
+        if (date[0] < 10):
+            strDay = '0' + strDay
+        strHour = str(time[0])
+        if (time[0] < 10):
+            strHour = '0' + strHour
+        strMinute = str(time[1])
+        if (time[1] < 10):
+            strMinute = '0' + strMinute
+        strSecond = str(time[2])
+        if (time[2] < 10):
+            strSecond = '0' + strSecond
+        timestamp = strYear + "-" + strMonth + "-" + strDay + " " + strHour + ":" + strMinute + ":" + strSecond
         if len(time) == 4:
             timestamp += " " + time[3]
         return timestamp
