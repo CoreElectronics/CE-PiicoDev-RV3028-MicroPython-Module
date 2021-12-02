@@ -94,7 +94,7 @@ When the configured edge occurs on the EVI pin the current time is copied to the
 
 Once an event has occured a call to `getTime(eventTimestamp = True)` will return the time of the last event. 
 
-Note that the Makerverse Supercap Real Time Clock module has a pull-up resistor connected to the EVI pin so this function defaults to detecting a falling edge.
+Note that the PiicoDev Real Time Clock module has a pull-up resistor connected to the EVI pin so this function defaults to detecting a falling edge.
 
 Parameter | Type | Default | Description
 --- | --- | --- | ---
