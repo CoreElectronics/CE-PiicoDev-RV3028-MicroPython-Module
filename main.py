@@ -1,5 +1,4 @@
 from PiicoDev_RV3028 import PiicoDev_RV3028
-from time import sleep_ms
 rtc = PiicoDev_RV3028()
 print()
 print('Timestamp:')

@@ -202,6 +202,7 @@ class PiicoDev_RV3028(object):
         
     def setTime(self, time):
         if type(time) == dict:
+            timeTmp = [0,0,0,0]
             timeTmp[0] = time['hour']
             timeTmp[1] = time['min']
             timeTmp[2] = time['sec']
@@ -253,9 +254,9 @@ class PiicoDev_RV3028(object):
         
     def setDate(self, date):
         if type(date) == dict:
-            day = data['day']
-            month = data['month']
-            year = data['year']
+            day = date['day']
+            month = date['month']
+            year = date['year']
         else:
             day = date[0]
             month = date[1]
