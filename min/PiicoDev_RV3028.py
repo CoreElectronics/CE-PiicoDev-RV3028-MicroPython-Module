@@ -98,7 +98,7 @@ class PiicoDev_RV3028:
 		else:return _A
 	def setTime(self,time):
 		if type(time)==dict:
-			timeTmp[0]=time['hour'];timeTmp[1]=time['min'];timeTmp[2]=time['sec']
+			timeTmp=[0,0,0,0];timeTmp[0]=time['hour'];timeTmp[1]=time['min'];timeTmp[2]=time['sec']
 			if _E in time:timeTmp[3]=time[_E]
 			time=timeTmp
 		tmp=self._read(_CTRL2,1)
@@ -122,7 +122,7 @@ class PiicoDev_RV3028:
 			time=timeTmp
 		return time
 	def setDate(self,date):
-		if type(date)==dict:day=data['day'];month=data['month'];year=data['year']
+		if type(date)==dict:day=date['day'];month=date['month'];year=date['year']
 		else:day=date[0];month=date[1];year=date[2]
 		date=[_bcdEncode(day),_bcdEncode(month),_bcdEncode(year)];self._write(_DAY,bytes(date))
 	def getDate(self,timeFormat=_F,eventTimestamp=_A):
