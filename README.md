@@ -34,13 +34,14 @@ This module has been tested on:
 
 This module only implements a subset of the RV3028's features. A full register map can be found in the RV-3028-C7 Application Manual: https://www.microcrystal.com/fileadmin/Media/Products/RTC/App.Manual/RV-3028-C7_App-Manual.pdf
 
-### rv3028(i2c = None)
-
-RV3028 object constructor. Returns an rv2038 object.
-
-Parameter | Type | Default | Description
---- | --- | --- | ---
-i2c | machine.I2C | None | An I2C object initialised with the pins the RV3028 is connected to
+### `PiicoDev_RV3028(bus=, freq=, sda=, scl=, addr=0x52)`
+Parameter | Type | Range            | Default                               | Description
+--------- | ---- | ---------------- | ------------------------------------- | --------------------------------------------------
+bus       | int  | 0, 1             | Raspberry Pi Pico: 0, Raspberry Pi: 1 | I2C Bus.  Ignored on Micro:bit
+freq      | int  | 100-1000000      | Device dependent                      | I2C Bus frequency (Hz).  Ignored on Raspberry Pi
+sda       | Pin  | Device Dependent | Device Dependent                      | I2C SDA Pin. Implemented on Raspberry Pi Pico only
+scl       | Pin  | Device Dependent | Device Dependent                      | I2C SCL Pin. Implemented on Raspberry Pi Pico only
+addr      | int  | 0x52             | 0x52                                  | This address cannot be changed
 
 ### getUnixTime()
 
