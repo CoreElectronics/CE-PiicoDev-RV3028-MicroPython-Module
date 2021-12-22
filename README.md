@@ -176,7 +176,7 @@ eventTimestamp | Boolean | False | If False the current time and date are return
 
 ### timestamp():
 
-Returns the current time and dateas a string in the format `YYYY-MM-DD HH:MM:SS`, suitable for writing to a datalogger's CSV file.
+Returns the current time and date as a string in the format `YYYY-MM-DD HH:MM:SS`, suitable for writing to a datalogger's CSV file.
 
 # License
 This project is open source - please review the LICENSE.md file for further licensing information.
