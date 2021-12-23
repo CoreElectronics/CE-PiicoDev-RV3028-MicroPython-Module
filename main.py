@@ -1,4 +1,4 @@
-from PiicoDev_RV3028 import PiicoDev_RV3028
+from PiicoDev_RV3028 import *
 rtc = PiicoDev_RV3028()
 print()
 print('Timestamp:')
