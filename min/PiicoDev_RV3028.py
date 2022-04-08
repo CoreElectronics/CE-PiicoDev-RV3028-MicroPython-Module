@@ -1,8 +1,6 @@
-_I='falling'
-_H='Parameter State must be True or False'
-_G='dict'
-_F='list'
-_E='ampm'
+_G='falling'
+_F='Parameter State must be True or False'
+_E='24'
 _D=None
 _C=True
 _B='little'
@@ -46,7 +44,7 @@ class PiicoDev_RV3028:
 		self.i2c=create_unified_i2c(bus=bus,freq=freq,sda=sda,scl=scl);self.addr=addr
 		try:part=int(self.i2c.readfrom_mem(self.addr,_REG_ID,1))
 		except Exception as e:print(i2c_err_str.format(self.addr));raise e
-		self.setBatterySwitchover();self.configTrickleCharger();self.setTrickleCharger()
+		self.setBatterySwitchover();self.configTrickleCharger();self.setTrickleCharger();self.getDateTime()
 	def _read(self,reg,N):
 		try:tmp=int.from_bytes(self.i2c.readfrom_mem(self.addr,reg,N),_B)
 		except:print('Error reading from RV3028');return float('NaN')
@@ -60,13 +58,13 @@ class PiicoDev_RV3028:
 		tmp=self._read(_EE_BACKUP,1)
 		if state is _C:tmp=_writeCrumb(tmp,2,1)
 		elif state is _A:tmp=_writeCrumb(tmp,2,0)
-		else:print(_H);return
+		else:print(_F);return
 		self._write(_EE_BACKUP,tmp.to_bytes(1,_B,_A))
 	def setTrickleCharger(self,state=_C):
 		tmp=self._read(_EE_BACKUP,1)
 		if state is _C:tmp=_writeBit(tmp,5,1)
 		elif state is _A:tmp=_writeBit(tmp,5,0)
-		else:print(_H);return
+		else:print(_F);return
 		self._write(_EE_BACKUP,tmp.to_bytes(1,_B,_A))
 	def configTrickleCharger(self,R='3k'):
 		tmp=self._read(_EE_BACKUP,1);tmp=_setBit(tmp,7)
@@ -87,67 +85,42 @@ class PiicoDev_RV3028:
 		elif clk==0:tmp=_writeTribit(tmp,0,7)
 		else:print('clk parameter must be 32678, 8192, 1024, 64,32, 1, or 0. Values are in units of Hz.');return
 		self._write(_EE_CLKOUT,tmp.to_bytes(1,_B,_A))
-	def resetEventInterrupt(self,edge=_I):
+	def resetEventInterrupt(self,edge=_G):
 		tmp=self._read(_STATUS,1);tmp=_clearBit(tmp,1);self._write(_STATUS,bytes([tmp]));tmp=self._read(_ECTRL,1);tmp=_clearBit(tmp,0)
-		if edge==_I:tmp=_clearBit(tmp,6)
+		if edge==_G:tmp=_clearBit(tmp,6)
 		else:tmp=_setBit(tmp,6)
 		tmp=_clearBit(tmp,1);tmp=_setBit(tmp,2);self._write(_ECTRL,bytes([tmp]));tmp=self._read(_CTRL2,1);tmp=_setBit(tmp,2);tmp=_setBit(tmp,7);self._write(_CTRL2,bytes([tmp]));tmp=self._write(_ECTRL,bytes([0]))
 	def getEventInterrupt(self):
 		tmp=self._read(_STATUS,1)
 		if _readBit(tmp,1)==1:return _C
 		else:return _A
-	def setTime(self,time):
-		if type(time)==dict:
-			timeTmp=[0,0,0,0];timeTmp[0]=time['hour'];timeTmp[1]=time['min'];timeTmp[2]=time['sec']
-			if _E in time:timeTmp[3]=time[_E]
-			time=timeTmp
+	def setTime(self):
 		tmp=self._read(_CTRL2,1)
-		if len(time)==3:tmp=_writeBit(tmp,1,0);hrs=_bcdEncode(time[0])
-		elif len(time)==4:
-			tmp=_writeBit(tmp,1,1);hrs=_bcdEncode(time[0])
-			if time[3]=='AM':hrs=_clearBit(hrs,5)
-			elif time[3]=='PM':hrs=_setBit(hrs,5)
-		self._write(_CTRL2,tmp.to_bytes(1,_B,_A));sec=_bcdEncode(time[2]);mins=_bcdEncode(time[1]);t=[sec,mins,hrs];self._write(_SEC,bytes(t))
-	def getTime(self,timeFormat=_F,eventTimestamp=_A):
+		if self.ampm==_E:tmp=_writeBit(tmp,1,0);hrs=_bcdEncode(self.hour)
+		elif self.ampm!=_E:
+			tmp=_writeBit(tmp,1,1);hrs=_bcdEncode(self.hour)
+			if self.ampm=='AM':hrs=_clearBit(hrs,5)
+			elif self.ampm=='PM':hrs=_setBit(hrs,5)
+		self._write(_CTRL2,tmp.to_bytes(1,_B,_A));sec=_bcdEncode(self.second);mins=_bcdEncode(self.minute);t=[sec,mins,hrs];self._write(_SEC,bytes(t))
+	def getTime(self,eventTimestamp=_A):
 		if eventTimestamp is _A:t=self._read(_SEC,3)
 		else:t=self._read(_SECTS,3)
-		hrFormat=_readBit(self._read(_CTRL2,1),1);t=t.to_bytes(3,_B,_A);mins=_bcdDecode(t[1]);secs=_bcdDecode(t[0]);hrs=_bcdDecode(t[2])
+		hrFormat=_readBit(self._read(_CTRL2,1),1);t=t.to_bytes(3,_B,_A);mins=_bcdDecode(t[1]);secs=_bcdDecode(t[0]);hrs=_bcdDecode(t[2]);self.hour=hrs;self.minute=mins;self.second=secs;self.ampm=_E
 		if hrFormat==1:
-			if _readBit(t[2],5)==0:time=[hrs,mins,secs,'AM']
-			else:hrByte=_clearBit(t[2],5);hrs=_bcdDecode(hrByte);time=[hrs,mins,secs,'PM']
-		else:time=[hrs,mins,secs]
-		if timeFormat==_G:
-			timeTmp={'hour':time[0],'min':time[1],'sec':time[2]}
-			if len(time)==4:timeTmp[_E]=time[3]
-			time=timeTmp
-		return time
-	def setDate(self,date):
-		if type(date)==dict:day=date['day'];month=date['month'];year=date['year']
-		else:day=date[0];month=date[1];year=date[2]
-		date=[_bcdEncode(day),_bcdEncode(month),_bcdEncode(year)];self._write(_DAY,bytes(date))
-	def getDate(self,timeFormat=_F,eventTimestamp=_A):
+			if _readBit(t[2],5)==0:self.ampm='AM'
+			else:hrByte=_clearBit(t[2],5);self.hour=_bcdDecode(hrByte);self.ampm='PM'
+	def setDate(self):
+		year_2_digits=self.year
+		if year_2_digits>100:year_2_digits-=2000
+		date=[_bcdEncode(self.day),_bcdEncode(self.month),_bcdEncode(year_2_digits)];self._write(_DAY,bytes(date))
+	def getDate(self,eventTimestamp=_A):
 		if eventTimestamp is _A:tmp=self._read(_DAY,3)
 		else:tmp=self._read(_DAYTS,3)
-		date=tmp.to_bytes(3,_B,_A);day=_bcdDecode(date[0]);month=_bcdDecode(date[1]);year=_bcdDecode(date[2])
-		if timeFormat==_G:date={'day':day,'month':month,'year':year}
-		else:date=[day,month,year]
-		return date
-	def getDateTime(self,timeFormat=_F,eventTimestamp=_A):
-		time=self.getTime(timeFormat=timeFormat,eventTimestamp=eventTimestamp);date=self.getDate(timeFormat=timeFormat,eventTimestamp=eventTimestamp)
-		if timeFormat==_G:date.update(time);return date
-		return date,time
-	def timestamp(self):
-		A='0';time=self.getTime();date=self.getDate();strYear=str(date[2]+2000);strMonth=str(date[1])
-		if date[1]<10:strMonth=A+strMonth
-		strDay=str(date[0])
-		if date[0]<10:strDay=A+strDay
-		strHour=str(time[0])
-		if time[0]<10:strHour=A+strHour
-		strMinute=str(time[1])
-		if time[1]<10:strMinute=A+strMinute
-		strSecond=str(time[2])
-		if time[2]<10:strSecond=A+strSecond
-		timestamp=strYear+'-'+strMonth+'-'+strDay+' '+strHour+':'+strMinute+':'+strSecond
-		if len(time)==4:timestamp+=' '+time[3]
+		date=tmp.to_bytes(3,_B,_A);day=_bcdDecode(date[0]);month=_bcdDecode(date[1]);year=_bcdDecode(date[2]);self.day=day;self.month=month;self.year=year
+	def getDateTime(self,eventTimestamp=_A):self.getTime(eventTimestamp=eventTimestamp);self.getDate(eventTimestamp=eventTimestamp)
+	def setDateTime(self):self.setDate();self.setTime()
+	def timestamp(self,eventTimestamp=_A):
+		A='{:02d}';self.getDateTime(eventTimestamp=eventTimestamp);timestamp=A.format(self.year+2000)+'-'+A.format(self.month)+'-'+A.format(self.day)+' '+A.format(self.hour)+':'+A.format(self.minute)+':'+A.format(self.second)
+		if self.ampm!=_E:timestamp+=' '+self.ampm
 		return timestamp
 	def clearAllInterrupts(self):self._write(_STATUS,bytes([0]))
