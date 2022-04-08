@@ -83,7 +83,8 @@ class PiicoDev_RV3028(object):
         self.setBatterySwitchover()
         self.configTrickleCharger()
         self.setTrickleCharger()
-        
+        self.getDateTime()
+
     def _read(self, reg, N):
         try:
             tmp = int.from_bytes(self.i2c.readfrom_mem(self.addr, reg, N), 'little')
@@ -200,33 +201,25 @@ class PiicoDev_RV3028(object):
         else:
             return False
         
-    def setTime(self, time):
-        if type(time) == dict:
-            timeTmp = [0,0,0,0]
-            timeTmp[0] = time['hour']
-            timeTmp[1] = time['min']
-            timeTmp[2] = time['sec']
-            if 'ampm' in time:
-                timeTmp[3] = time['ampm']
-            time = timeTmp
+    def setTime(self):
         tmp = self._read(_CTRL2, 1)
-        if len(time) == 3:
+        if self.ampm == '24':
             tmp = _writeBit(tmp, 1, 0)
-            hrs = _bcdEncode(time[0])
-        elif len(time) == 4:
+            hrs = _bcdEncode(self.hour)
+        elif self.ampm != '24':
             tmp = _writeBit(tmp, 1, 1)
-            hrs = _bcdEncode(time[0])
-            if time[3] == 'AM':
+            hrs = _bcdEncode(self.hour)
+            if self.ampm == 'AM':
                 hrs = _clearBit(hrs, 5)
-            elif time[3] == 'PM':
+            elif self.ampm == 'PM':
                 hrs = _setBit(hrs, 5)
         self._write(_CTRL2, tmp.to_bytes(1,'little', False))
-        sec = _bcdEncode(time[2])
-        mins = _bcdEncode(time[1])
+        sec = _bcdEncode(self.second)
+        mins = _bcdEncode(self.minute)
         t = [sec, mins, hrs]
         self._write(_SEC, bytes(t))
         
-    def getTime(self, timeFormat = 'list', eventTimestamp = False):
+    def getTime(self, eventTimestamp = False):
         if eventTimestamp is False:
             t = self._read(_SEC, 3)
         else:
@@ -236,35 +229,26 @@ class PiicoDev_RV3028(object):
         mins = _bcdDecode(t[1])
         secs = _bcdDecode(t[0])
         hrs = _bcdDecode(t[2])
+        self.hour = hrs
+        self.minute = mins
+        self.second = secs
+        self.ampm = '24'
         if hrFormat == 1:
             if _readBit(t[2], 5) == 0:
-                time = [hrs, mins, secs, 'AM']
+                self.ampm = 'AM'
             else:
                 hrByte = _clearBit(t[2], 5)
-                hrs = _bcdDecode(hrByte)
-                time = [hrs, mins, secs, 'PM']
-        else:
-            time = [hrs, mins, secs]
-        if timeFormat == 'dict':
-            timeTmp = {'hour': time[0], 'min': time[1], 'sec': time[2]}
-            if len(time) == 4:
-                timeTmp['ampm'] = time[3]
-            time = timeTmp
-        return time
+                self.hour = _bcdDecode(hrByte)
+                self.ampm = 'PM'
         
-    def setDate(self, date):
-        if type(date) == dict:
-            day = date['day']
-            month = date['month']
-            year = date['year']
-        else:
-            day = date[0]
-            month = date[1]
-            year = date[2]
-        date = [_bcdEncode(day), _bcdEncode(month), _bcdEncode(year)]
+    def setDate(self):
+        year_2_digits = self.year
+        if year_2_digits > 100:
+                year_2_digits -= 2000
+        date = [_bcdEncode(self.day), _bcdEncode(self.month), _bcdEncode(year_2_digits)]
         self._write(_DAY, bytes(date))
         
-    def getDate(self, timeFormat = 'list', eventTimestamp = False):
+    def getDate(self, eventTimestamp = False):
         if eventTimestamp is False:
             tmp = self._read(_DAY, 3)
         else:
@@ -273,44 +257,26 @@ class PiicoDev_RV3028(object):
         day = _bcdDecode(date[0])
         month = _bcdDecode(date[1])
         year = _bcdDecode(date[2])
-        if timeFormat == 'dict':
-            date = {'day': day, 'month': month, 'year': year}
-        else:
-            date = [day, month, year]
-        return date
+        self.day = day
+        self.month = month
+        self.year = year
     
-    def getDateTime(self, timeFormat = 'list', eventTimestamp = False):
-        time = self.getTime(timeFormat = timeFormat, eventTimestamp = eventTimestamp)
-        date = self.getDate(timeFormat = timeFormat, eventTimestamp = eventTimestamp)
-        # Clear event flag
-        if timeFormat == 'dict':
-            date.update(time)
-            return date
-        return date, time
+    def getDateTime(self, eventTimestamp = False):
+        self.getTime(eventTimestamp = eventTimestamp)
+        self.getDate(eventTimestamp = eventTimestamp)
+
+    
+    def setDateTime(self):
+        self.setDate()
+        self.setTime()
      
-    def timestamp(self):
-        time = self.getTime()
-        date = self.getDate()
-        strYear = str(date[2]+2000)
-        strMonth = str(date[1])
-        if (date[1] < 10):
-            strMonth = '0' + strMonth
-        strDay = str(date[0])
-        if (date[0] < 10):
-            strDay = '0' + strDay
-        strHour = str(time[0])
-        if (time[0] < 10):
-            strHour = '0' + strHour
-        strMinute = str(time[1])
-        if (time[1] < 10):
-            strMinute = '0' + strMinute
-        strSecond = str(time[2])
-        if (time[2] < 10):
-            strSecond = '0' + strSecond
-        timestamp = strYear + "-" + strMonth + "-" + strDay + " " + strHour + ":" + strMinute + ":" + strSecond
-        if len(time) == 4:
-            timestamp += " " + time[3]
+    def timestamp(self, eventTimestamp = False):
+        self.getDateTime(eventTimestamp = eventTimestamp)
+        timestamp = "{:02d}".format(self.year+2000) + "-" + "{:02d}".format(self.month) + "-" + "{:02d}".format(self.day) + " " + "{:02d}".format(self.hour) + ":" + "{:02d}".format(self.minute) + ":" + "{:02d}".format(self.second)
+        if self.ampm != '24':
+            timestamp += " " + self.ampm
         return timestamp
     
     def clearAllInterrupts(self):
         self._write(_STATUS, bytes([0]))
+

@@ -6,9 +6,13 @@ rtc = PiicoDev_RV3028()
 
 rtc.resetEventInterrupt(edge = 'falling')
 
+rtc.getDateTime()
+print('Monitoring started at: ' + rtc.timestamp())
+
 while (rtc.getEventInterrupt() is False):
-    print('Checking is there has been a falling edge on EVI pin')
+    print('Waiting for 10 seconds.  If there is a falling edge on EVI pin the time will be recorded.')
     sleep_ms(10000)
-print('Event occurred at the exact time: ', end='')
-print(rtc.getDateTime(eventTimestamp=True))
+print('Event occurred at: ', end='')
+rtc.getDateTime(eventTimestamp=True)
+print(rtc.timestamp(eventTimestamp=True))
     
