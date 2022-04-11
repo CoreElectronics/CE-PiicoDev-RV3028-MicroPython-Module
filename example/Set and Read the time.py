@@ -7,13 +7,14 @@ rtc = PiicoDev_RV3028() # Initialise the RTC module
 rtc.getDateTime()
 print(rtc.timestamp())
 
-rtc.day = 8
+rtc.day = 11
 rtc.month = 4
-rtc.year = 22
-rtc.hour = 11
-rtc.minute = 59
-rtc.second = 58
-rtc.ampm = 'PM' # 'AM','PM' or '24'. Defaults to 24-hr time
+rtc.year = 2022
+rtc.hour = 13
+rtc.minute = 41
+rtc.second = 00
+rtc.ampm = '24' # 'AM','PM' or '24'. Defaults to 24-hr time
+rtc.weekday = 0
 rtc.setDateTime()
 
 sleep_ms(3000)
@@ -21,3 +22,4 @@ sleep_ms(3000)
 # Get the current time
 rtc.getDateTime()
 print(rtc.timestamp())
+print(rtc.weekday)

@@ -1,16 +1,25 @@
-from PiicoDev_RV3028 import *
-rtc = PiicoDev_RV3028()
-print()
-print('Timestamp:')
+from PiicoDev_RV3028 import PiicoDev_RV3028
+from PiicoDev_Unified import sleep_ms
+
+rtc = PiicoDev_RV3028() # Initialise the RTC module
+
+# Setting the time
+rtc.getDateTime()
 print(rtc.timestamp())
-print()
 
-# Interrupts
-rtc.clearAllInterrupts()
-rtc.resetEventInterrupt()
+rtc.day = 11
+rtc.month = 4
+rtc.year = 2022
+rtc.hour = 13
+rtc.minute = 41
+rtc.second = 00
+rtc.ampm = '24' # 'AM','PM' or '24'. Defaults to 24-hr time
+rtc.weekday = 0
+rtc.setDateTime()
 
-while rtc.getEventInterrupt() is False:
-    sleep_ms(100)
-    continue
+sleep_ms(3000)
 
-print(rtc.getDateTime(timeFormat = 'dict', eventTimestamp = True))
+# Get the current time
+rtc.getDateTime()
+print(rtc.timestamp())
+print(rtc.weekday)

@@ -6,4 +6,5 @@ rtc = PiicoDev_RV3028()
 
 while True:
     print(rtc.timestamp())
+    print(rtc.weekday)
     sleep_ms(1000)
