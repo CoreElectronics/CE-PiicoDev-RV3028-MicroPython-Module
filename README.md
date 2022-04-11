@@ -49,7 +49,7 @@ Returns the current time and date as a string in the format `YYYY-MM-DD HH:MM:SS
 
 Parameter | Type | Default | Description
 --- | --- | --- | ---
-time | Integer | None | The UNIX time to load into the RV3028's UNIX time registers. These registers hold a 32-bit integer which increments once per second.**
+time | Integer | None | The UNIX time to load into the RV3028's UNIX time registers. These registers hold a 32-bit integer which increments once per second.
 
 ### `PiicoDev_RTC.getUnixTime()`
 
