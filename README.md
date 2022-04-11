@@ -33,10 +33,13 @@ second    | int    | 0 - 59                 |         | Seconds
 ampm      | string | 'AM', 'PM' or '24'     | '24'    | Chose between AM, PM or 24 hour time
 
 ### setDateTime()
+
 Sends the pre-set instance variables to the RTC chip
 
-### getDateTime()
-populates the instance variables with the current time 
+### getDateTime(eventTimestamp = False)
+
+If eventTimestamp is False, populates the instance variables with the current time.
+If eventTimestamp is True, populates the instance variables with the event time.
 
 ### getUnixTime()
 
@@ -100,32 +103,6 @@ edge | String | 'falling' | If 'falling' a falling edge / low level trigger is c
 
 Returns the state (True or False) of the event interrupt flag. This function can be used to poll the interrupt status if the INT pin is not connected.
 
-### setTime(time)
-
-Sets the current time registers in the RV3028 to the time given in the `time` argument.
-
-The `time` argument can be either a list or dictionary with the following formats:
-
-```
-time[0] = hours
-time[1] = minutes
-time[2] = seconds
-# AM/PM indicator optional
-time[3] = 'AM' # or 'PM'
-
-time['hour'] = hours
-time['min'] = minutes
-time['sec'] = seconds
-# AM/PM indicator optional
-time['ampm'] = 'AM' # or 'PM'
-```
-
-The AM/PM value is optional to differentiate between 12hr and 24hr time. If it exists the numerical hour value is assumed to be in 12-hour format (NB: range checking is not done on this value).
-
-If the AM/PM value is omitted (ie: if len(time) is 3) then the time is assumed to be in 24hr format.
-
-The presence or absence of the AM/PM value also configures the RV3028 for 12hr or 24hr time.
-
 ### getTime(timeFormat = 'list', eventTimestamp = False)
 
 Returns either the current time (in `list` or `dict` format, see `setTime()` for details) or the time of the last event timestamp (again, in either `list` or `dict` formats).
@@ -134,22 +111,6 @@ Parameter | Type | Default | Description
 --- | --- | --- | ---
 timeFormat | String | 'list' | If `timeFormat = 'list'` then the returned time value will be in list format. If `timeFormat = 'dict'` a dictionary will be returned.
 eventTimestamp | Boolean | False | If False the current time is returned. If True the time of the last event is returned.
-
-### setDate(date)
-
-Sets the day/month/year date.
-
-The `date` argument can be either a list of dictionary with the following formats:
-
-```
-date[0] = day
-date[1] = month
-date[2] = year
-
-date['day'] = day
-date['month'] = month
-date['year'] = year
-```
 
 ### getDate(timeFormat = 'list', eventTimestamp = False)
 
