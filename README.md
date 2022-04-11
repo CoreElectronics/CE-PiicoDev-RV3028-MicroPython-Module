@@ -26,11 +26,12 @@ Parameter | Type   | Range                  | Default | Description
 --------- | ------ | ---------------------- | ------- | --------------------------------------------------
 year      | int    | 0 - 99  or 2000 - 2099 |         | If a number between 0 and 99 is entered, the year is assumed to be between 2000 and 2099
 month     | int    | 1 - 12                 |         | Month of the year
-day       | Pin    | 1 - 31                 |         | Day of the month
-hour      | Pin    | 0 - 23                 |         | Hour of the day
+day       | int    | 1 - 31                 |         | Day of the month
+hour      | int    | 0 - 23                 |         | Hour of the day
 minute    | int    | 0 - 59                 |         | Minutes
 second    | int    | 0 - 59                 |         | Seconds
 ampm      | string | 'AM', 'PM' or '24'     | '24'    | Chose between AM, PM or 24 hour time
+weekday   | int    | 0 - 6                  |         | Counts from 0 to 6
 
 ### `PiicoDev_RTC.setDateTime()`
 
