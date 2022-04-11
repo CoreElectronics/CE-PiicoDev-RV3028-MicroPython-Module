@@ -21,6 +21,23 @@ sda       | Pin  | Device Dependent | Device Dependent                      | I2
 scl       | Pin  | Device Dependent | Device Dependent                      | I2C SCL Pin. Implemented on Raspberry Pi Pico only
 addr      | int  | 0x52             | 0x52                                  | This address cannot be changed
 
+### Instance Variables
+Parameter | Type   | Range                  | Default | Description
+--------- | ------ | ---------------------- | ------- | --------------------------------------------------
+year      | int    | 0 - 99  or 2000 - 2099 |         | If a number between 0 and 99 is entered, the year is assumed to be between 2000 and 2099
+month     | int    | 1 - 12                 |         | Month of the year
+day       | Pin    | 1 - 31                 |         | Day of the month
+hour      | Pin    | 0 - 23                 |         | Hour of the day
+minute    | int    | 0 - 59                 |         | Minutes
+second    | int    | 0 - 59                 |         | Seconds
+ampm      | string | 'AM', 'PM' or '24'     | '24'    | Chose between AM, PM or 24 hour time
+
+### setDateTime()
+Sends the pre-set instance variables to the RTC chip
+
+### getDateTime()
+populates the instance variables with the current time 
+
 ### getUnixTime()
 
 Returns the current UNIX time in the RV3028. Note that this is not converted to "correct" UNIX time and is simply an integer equal to the number of seconds since reset (or call to `setUnixTime()`).
