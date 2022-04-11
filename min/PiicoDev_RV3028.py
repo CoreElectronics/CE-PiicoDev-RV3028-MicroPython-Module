@@ -94,31 +94,23 @@ class PiicoDev_RV3028:
 		tmp=self._read(_STATUS,1)
 		if _readBit(tmp,1)==1:return _C
 		else:return _A
-	def setTime(self):
+	def getDateTime(self,eventTimestamp=_A):
+		if eventTimestamp is _A:tmp=self._read(_SEC,7);date=tmp.to_bytes(7,_B,_A);self.day=_bcdDecode(date[4]);self.month=_bcdDecode(date[5]);self.year=_bcdDecode(date[6])
+		else:tmp=self._read(_SECTS,6);date=tmp.to_bytes(6,_B,_A);self.day=_bcdDecode(date[3]);self.month=_bcdDecode(date[4]);self.year=_bcdDecode(date[5])
+		hrFormat=_readBit(self._read(_CTRL2,1),1);t=tmp.to_bytes(4,_B,_A);self.minute=_bcdDecode(t[1]);self.second=_bcdDecode(t[0]);self.hour=_bcdDecode(t[2]);print(t[3]);self.weekday=t[3];self.ampm=_E
+		if hrFormat==1:
+			if _readBit(t[2],5)==0:self.ampm='AM'
+			else:hrByte=_clearBit(t[2],5);self.hour=_bcdDecode(hrByte);self.ampm='PM'
+	def setDateTime(self):
+		year_2_digits=self.year
+		if year_2_digits>100:year_2_digits-=2000
 		tmp=self._read(_CTRL2,1)
 		if self.ampm==_E:tmp=_writeBit(tmp,1,0);hrs=_bcdEncode(self.hour)
 		elif self.ampm!=_E:
 			tmp=_writeBit(tmp,1,1);hrs=_bcdEncode(self.hour)
 			if self.ampm=='AM':hrs=_clearBit(hrs,5)
 			elif self.ampm=='PM':hrs=_setBit(hrs,5)
-		self._write(_CTRL2,tmp.to_bytes(1,_B,_A));sec=_bcdEncode(self.second);mins=_bcdEncode(self.minute);t=[sec,mins,hrs];self._write(_SEC,bytes(t))
-	def getTime(self,eventTimestamp=_A):
-		if eventTimestamp is _A:t=self._read(_SEC,3)
-		else:t=self._read(_SECTS,3)
-		hrFormat=_readBit(self._read(_CTRL2,1),1);t=t.to_bytes(3,_B,_A);mins=_bcdDecode(t[1]);secs=_bcdDecode(t[0]);hrs=_bcdDecode(t[2]);self.hour=hrs;self.minute=mins;self.second=secs;self.ampm=_E
-		if hrFormat==1:
-			if _readBit(t[2],5)==0:self.ampm='AM'
-			else:hrByte=_clearBit(t[2],5);self.hour=_bcdDecode(hrByte);self.ampm='PM'
-	def setDate(self):
-		year_2_digits=self.year
-		if year_2_digits>100:year_2_digits-=2000
-		date=[_bcdEncode(self.day),_bcdEncode(self.month),_bcdEncode(year_2_digits)];self._write(_DAY,bytes(date))
-	def getDate(self,eventTimestamp=_A):
-		if eventTimestamp is _A:tmp=self._read(_DAY,3)
-		else:tmp=self._read(_DAYTS,3)
-		date=tmp.to_bytes(3,_B,_A);day=_bcdDecode(date[0]);month=_bcdDecode(date[1]);year=_bcdDecode(date[2]);self.day=day;self.month=month;self.year=year
-	def getDateTime(self,eventTimestamp=_A):self.getTime(eventTimestamp=eventTimestamp);self.getDate(eventTimestamp=eventTimestamp)
-	def setDateTime(self):self.setDate();self.setTime()
+		self._write(_CTRL2,tmp.to_bytes(1,_B,_A));self._write(_SEC,bytes([_bcdEncode(self.second),_bcdEncode(self.minute),hrs,self.weekday,_bcdEncode(self.day),_bcdEncode(self.month),_bcdEncode(year_2_digits)]))
 	def timestamp(self,eventTimestamp=_A):
 		A='{:02d}';self.getDateTime(eventTimestamp=eventTimestamp);timestamp=A.format(self.year+2000)+'-'+A.format(self.month)+'-'+A.format(self.day)+' '+A.format(self.hour)+':'+A.format(self.minute)+':'+A.format(self.second)
 		if self.ampm!=_E:timestamp+=' '+self.ampm
