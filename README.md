@@ -41,15 +41,15 @@ Sends the pre-set instance variables to the RTC chip
 If eventTimestamp is False, populates the instance variables with the current time.
 If eventTimestamp is True, populates the instance variables with the event time.
 
-### getUnixTime()
-
-Returns the current UNIX time in the RV3028. Note that this is not converted to "correct" UNIX time and is simply an integer equal to the number of seconds since reset (or call to `setUnixTime()`).
-
 ### setUnixTime(time)
 
 Parameter | Type | Default | Description
 --- | --- | --- | ---
-time | Integer | None | The UNIX time to load into the RV3028's UNIX time registers. These registers hold a 32-bit integer which increments once per second.
+time | Integer | None | The UNIX time to load into the RV3028's UNIX time registers. These registers hold a 32-bit integer which increments once per second.**
+
+### getUnixTime()
+
+Returns the current UNIX time in the RV3028. Note that this is not converted to "correct" UNIX time and is simply an integer equal to the number of seconds since reset (or call to `setUnixTime()`).
 
 ### setBatterySwitchover(state = True)
 
@@ -102,33 +102,6 @@ edge | String | 'falling' | If 'falling' a falling edge / low level trigger is c
 ### getEventInterrupt()
 
 Returns the state (True or False) of the event interrupt flag. This function can be used to poll the interrupt status if the INT pin is not connected.
-
-### getTime(timeFormat = 'list', eventTimestamp = False)
-
-Returns either the current time (in `list` or `dict` format, see `setTime()` for details) or the time of the last event timestamp (again, in either `list` or `dict` formats).
-
-Parameter | Type | Default | Description
---- | --- | --- | ---
-timeFormat | String | 'list' | If `timeFormat = 'list'` then the returned time value will be in list format. If `timeFormat = 'dict'` a dictionary will be returned.
-eventTimestamp | Boolean | False | If False the current time is returned. If True the time of the last event is returned.
-
-### getDate(timeFormat = 'list', eventTimestamp = False)
-
-Returns either the current date (in `list` or `dict` format, see `setDate()` for details) or the date of the last event timestamp (again, in either `list` or `dict` formats).
-
-Parameter | Type | Default | Description
---- | --- | --- | ---
-timeFormat | String | 'list' | If `timeFormat = 'list'` then the returned time value will be in list format. If `timeFormat = 'dict'` a dictionary will be returned.
-eventTimestamp | Boolean | False | If False the current time is returned. If True the time of the last event is returned.
-
-### getDateTime(timeFormat = 'list', eventTimestamp = False)
-
-Returns the date and time in a format specified by `timeFormat`.
-
-Parameter | Type | Default | Description
---- | --- | --- | ---
-timeFormat | String | 'list' | If `timeFormat = 'list'` then the time and date values will be returned in two lists `data, time = getDateTime()`. If `timeFormat = 'dict'` a dictionary will be returned with all six values included.
-eventTimestamp | Boolean | False | If False the current time and date are returned. If True the time and date of the last event is returned.
 
 ### timestamp():
 
