@@ -82,13 +82,13 @@ Parameter | Type | Default | Description
 --- | --- | --- | ---
 R | String | '3k' | The trickle charger resistor is set to the value described by this string. Valid values are '3k', '5k', '9k', and '15k'.
 
-### `PiicoDev_RTC.configClockOutput(clk = 32768)`
+### `PiicoDev_RTC.configClockOutput(clk)`
 
 Sets the frequency of the CLK output pin.
 
-Parameter | Type | Default | Description
---- | --- | --- | ---
-clk | Integer | 32768 | The frequency, in Hz, of the square wave on the CLK output pin. Valid values are: 32768, 8192, 1024, 64, 32, 1, and 0 (always low).
+Parameter | Type | Description
+--- | --- | ---
+clk | Integer | The frequency, in Hz, of the square wave on the CLK output pin. Valid values are: 32768, 8192, 1024, 64, 32, 1, and 0 (always low).
 
 ### `PiicoDev_RTC.resetEventInterrupt(edge = 'falling')`
 
@@ -96,7 +96,7 @@ Sets the event interrupt enable flag and configures the event interrupt for a fa
 
 When the configured edge occurs on the EVI pin the current time is copied to the "timestamp" registers and the INT pin is driven low. A call to `getEventInterrupt()` can be used to poll the interrupt status if the INT pin is not connected.
 
-Once an event has occured a call to `getTime(eventTimestamp = True)` will return the time of the last event. 
+Once an event has occured a call to `getTime(eventTimestamp = True)` will return the time of the last event.
 
 Note that the PiicoDev Real Time Clock module has a pull-up resistor connected to the EVI pin so this function defaults to detecting a falling edge.
 
