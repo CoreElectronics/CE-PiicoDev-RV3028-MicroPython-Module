@@ -82,7 +82,7 @@ class PiicoDev_RV3028:
 		elif R=='15k':tmp=_writeCrumb(tmp,0,3)
 		else:print("R parameter must be '3k', '5k', '9k', or '15k'");return
 		self._write(_EE_BACKUP,tmp.to_bytes(1,_B,_A))
-	def configClockOutput(self,clk=32768):
+	def configClockOutput(self,clk):
 		tmp=self._read(_EE_CLKOUT,1)
 		if clk==32768:tmp=_writeTribit(tmp,0,0)
 		elif clk==8192:tmp=_writeTribit(tmp,0,1)
