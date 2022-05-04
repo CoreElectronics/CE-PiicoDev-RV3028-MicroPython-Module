@@ -80,7 +80,7 @@ class PiicoDev_RV3028(object):
             print(i2c_err_str.format(self.addr))
             raise e
         
-        self._weekday = 0
+        self._weekday = 0 # integer 0 to 6
         self.setBatterySwitchover()
         self.configTrickleCharger()
         self.setTrickleCharger()
@@ -88,10 +88,12 @@ class PiicoDev_RV3028(object):
         
     @property
     def weekday(self):
+        """Get the weekday and return as a string"""
         return _dayNames[self._weekday]
     @weekday.setter
     def weekday(self, value):
-        if value in _dayNames or value in capitalize(_dayNames): self._weekday = _dayNames.index(value)
+        """Set the weekday. Accepts a string, checks string is a day name, and stores as integer 0 to 6"""
+        if value in _dayNames or value in capitalize(_dayNames): self._weekday = _dayNames.index(value) 
         else: print('weekday must be "Monday", "Tuesday", ... "Saturday" or "Sunday" (case-sensitive)')
 
     def _read(self, reg, N):
