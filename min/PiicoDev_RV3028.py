@@ -47,11 +47,12 @@ class PiicoDev_RV3028:
 		except Exception as e:print(i2c_err_str.format(self.addr));raise e
 		self._weekday=0;self.setBatterySwitchover();self.configTrickleCharger();self.setTrickleCharger();self.getDateTime()
 	@property
-	def weekday(self):return _dayNames[self._weekday]
+	def weekday(self):'Get the weekday and return as a string';return _dayNames[self._weekday]
 	@weekday.setter
 	def weekday(self,value):
-		if value in _dayNames or value in capitalize(_dayNames):self._weekday=_dayNames.index(value)
-		else:print('weekday must be "Monday", "Tuesday", ... "Saturday" or "Sunday" (case-sensitive)')
+		'Set the weekday. Accepts a string, checks string is a day name, and stores as integer 0 to 6'
+		if value in _dayNames:self._weekday=_dayNames.index(value)
+		else:print('Warning: Weekday must be "Monday", "Tuesday", ... "Saturday" or "Sunday" (case-sensitive)')
 	def _read(self,reg,N):
 		try:tmp=int.from_bytes(self.i2c.readfrom_mem(self.addr,reg,N),_B)
 		except:print('Error reading from RV3028');return float('NaN')
