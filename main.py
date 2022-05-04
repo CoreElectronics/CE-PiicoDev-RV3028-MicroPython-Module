@@ -14,12 +14,12 @@ rtc.hour = 13
 rtc.minute = 41
 rtc.second = 00
 rtc.ampm = '24' # 'AM','PM' or '24'. Defaults to 24-hr time
-rtc.weekday = 0
-rtc.setDateTime()
-
-sleep_ms(3000)
-
-# Get the current time
-rtc.getDateTime()
-print(rtc.timestamp())
-print(rtc.weekday)
+rtc.weekday = 'tuesday' # Rolls over at midnight, works independently of the calendar date.
+# rtc.setDateTime()
+# 
+# sleep_ms(3000)
+# 
+# # Get the current time
+# rtc.getDateTime()
+# print(rtc.timestamp())
+# print('Day of week: ' + str(rtc.weekday))

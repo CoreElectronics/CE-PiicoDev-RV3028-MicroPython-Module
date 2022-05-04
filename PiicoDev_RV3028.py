@@ -11,7 +11,7 @@
 from PiicoDev_Unified import *
 
 compat_str = '\nUnified PiicoDev library out of date.  Get the latest module: https://piico.dev/unified \n'
-
+_dayNames=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
 _I2C_ADDRESS = 0x52
 _SEC = 0x00
 _MIN = 0x01
@@ -61,7 +61,7 @@ def _bcdDecode(val):
 def _bcdEncode(val):
     return ((val//10) << 4) | (val % 10)
 
-class PiicoDev_RV3028(object):
+class PiicoDev_RV3028(object):    
     def __init__(self, bus=None, freq=None, sda=None, scl=None, addr=_I2C_ADDRESS):
         try:
             if compat_ind >= 1:
@@ -79,11 +79,20 @@ class PiicoDev_RV3028(object):
         except Exception as e:
             print(i2c_err_str.format(self.addr))
             raise e
-               
+        
+        self._weekday = 0
         self.setBatterySwitchover()
         self.configTrickleCharger()
         self.setTrickleCharger()
         self.getDateTime()
+        
+    @property
+    def weekday(self):
+        return _dayNames[self._weekday]
+    @weekday.setter
+    def weekday(self, value):
+        if value in _dayNames or value in capitalize(_dayNames): self._weekday = _dayNames.index(value)
+        else: print('weekday must be "Monday", "Tuesday", ... "Saturday" or "Sunday" (case-sensitive)')
 
     def _read(self, reg, N):
         try:
@@ -220,8 +229,7 @@ class PiicoDev_RV3028(object):
         self.minute = _bcdDecode(t[1])
         self.second = _bcdDecode(t[0])
         self.hour = _bcdDecode(t[2])
-        print(t[3])
-        self.weekday = t[3]
+        self._weekday = t[3]
         self.ampm = '24'
         if hrFormat == 1:
             if _readBit(t[2], 5) == 0:
@@ -248,7 +256,7 @@ class PiicoDev_RV3028(object):
             elif self.ampm == 'PM':
                 hrs = _setBit(hrs, 5)
         self._write(_CTRL2, tmp.to_bytes(1,'little', False))
-        self._write(_SEC, bytes([_bcdEncode(self.second), _bcdEncode(self.minute), hrs, self.weekday, _bcdEncode(self.day), _bcdEncode(self.month), _bcdEncode(year_2_digits)]))
+        self._write(_SEC, bytes([_bcdEncode(self.second), _bcdEncode(self.minute), hrs, self._weekday, _bcdEncode(self.day), _bcdEncode(self.month), _bcdEncode(year_2_digits)]))
      
     def timestamp(self, eventTimestamp = False):
         self.getDateTime(eventTimestamp = eventTimestamp)
