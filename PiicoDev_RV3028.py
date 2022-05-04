@@ -1,5 +1,6 @@
 # A basic class to use the Makerverse RV3028 Supercap Real Time Clock on the Raspberry Pi Pico
-# Written by Brenton Schulz at Core Electronics
+# Written by Brenton Schulz, Peter Johnston and Michael Ruppe at Core Electronics
+# 2022 May 4th Use class attributes instead of setters/getters
 # 2021 NOV 5th Initial feature set complete
 #     - Set / get date and time
 #     - Set / get UNIX time (independent of main calendar clock)
@@ -93,8 +94,8 @@ class PiicoDev_RV3028(object):
     @weekday.setter
     def weekday(self, value):
         """Set the weekday. Accepts a string, checks string is a day name, and stores as integer 0 to 6"""
-        if value in _dayNames or value in capitalize(_dayNames): self._weekday = _dayNames.index(value) 
-        else: print('weekday must be "Monday", "Tuesday", ... "Saturday" or "Sunday" (case-sensitive)')
+        if value in _dayNames: self._weekday = _dayNames.index(value)
+        else: print('Warning: Weekday must be "Monday", "Tuesday", ... "Saturday" or "Sunday" (case-sensitive)')
 
     def _read(self, reg, N):
         try:
