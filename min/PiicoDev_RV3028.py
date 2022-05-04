@@ -7,6 +7,7 @@ _B='little'
 _A=False
 from PiicoDev_Unified import *
 compat_str='\nUnified PiicoDev library out of date.  Get the latest module: https://piico.dev/unified \n'
+_dayNames=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
 _I2C_ADDRESS=82
 _SEC=0
 _MIN=1
@@ -44,7 +45,13 @@ class PiicoDev_RV3028:
 		self.i2c=create_unified_i2c(bus=bus,freq=freq,sda=sda,scl=scl);self.addr=addr
 		try:part=int(self.i2c.readfrom_mem(self.addr,_REG_ID,1))
 		except Exception as e:print(i2c_err_str.format(self.addr));raise e
-		self.setBatterySwitchover();self.configTrickleCharger();self.setTrickleCharger();self.getDateTime()
+		self._weekday=0;self.setBatterySwitchover();self.configTrickleCharger();self.setTrickleCharger();self.getDateTime()
+	@property
+	def weekday(self):return _dayNames[self._weekday]
+	@weekday.setter
+	def weekday(self,value):
+		if value in _dayNames or value in capitalize(_dayNames):self._weekday=_dayNames.index(value)
+		else:print('weekday must be "Monday", "Tuesday", ... "Saturday" or "Sunday" (case-sensitive)')
 	def _read(self,reg,N):
 		try:tmp=int.from_bytes(self.i2c.readfrom_mem(self.addr,reg,N),_B)
 		except:print('Error reading from RV3028');return float('NaN')
@@ -97,7 +104,7 @@ class PiicoDev_RV3028:
 	def getDateTime(self,eventTimestamp=_A):
 		if eventTimestamp is _A:tmp=self._read(_SEC,7);date=tmp.to_bytes(7,_B,_A);self.day=_bcdDecode(date[4]);self.month=_bcdDecode(date[5]);self.year=_bcdDecode(date[6])
 		else:tmp=self._read(_SECTS,6);date=tmp.to_bytes(6,_B,_A);self.day=_bcdDecode(date[3]);self.month=_bcdDecode(date[4]);self.year=_bcdDecode(date[5])
-		hrFormat=_readBit(self._read(_CTRL2,1),1);t=tmp.to_bytes(4,_B,_A);self.minute=_bcdDecode(t[1]);self.second=_bcdDecode(t[0]);self.hour=_bcdDecode(t[2]);print(t[3]);self.weekday=t[3];self.ampm=_E
+		hrFormat=_readBit(self._read(_CTRL2,1),1);t=tmp.to_bytes(4,_B,_A);self.minute=_bcdDecode(t[1]);self.second=_bcdDecode(t[0]);self.hour=_bcdDecode(t[2]);self._weekday=t[3];self.ampm=_E
 		if hrFormat==1:
 			if _readBit(t[2],5)==0:self.ampm='AM'
 			else:hrByte=_clearBit(t[2],5);self.hour=_bcdDecode(hrByte);self.ampm='PM'
@@ -110,7 +117,7 @@ class PiicoDev_RV3028:
 			tmp=_writeBit(tmp,1,1);hrs=_bcdEncode(self.hour)
 			if self.ampm=='AM':hrs=_clearBit(hrs,5)
 			elif self.ampm=='PM':hrs=_setBit(hrs,5)
-		self._write(_CTRL2,tmp.to_bytes(1,_B,_A));self._write(_SEC,bytes([_bcdEncode(self.second),_bcdEncode(self.minute),hrs,self.weekday,_bcdEncode(self.day),_bcdEncode(self.month),_bcdEncode(year_2_digits)]))
+		self._write(_CTRL2,tmp.to_bytes(1,_B,_A));self._write(_SEC,bytes([_bcdEncode(self.second),_bcdEncode(self.minute),hrs,self._weekday,_bcdEncode(self.day),_bcdEncode(self.month),_bcdEncode(year_2_digits)]))
 	def timestamp(self,eventTimestamp=_A):
 		A='{:02d}';self.getDateTime(eventTimestamp=eventTimestamp);timestamp=A.format(self.year+2000)+'-'+A.format(self.month)+'-'+A.format(self.day)+' '+A.format(self.hour)+':'+A.format(self.minute)+':'+A.format(self.second)
 		if self.ampm!=_E:timestamp+=' '+self.ampm
