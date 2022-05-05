@@ -12,7 +12,7 @@
 from PiicoDev_Unified import *
 
 compat_str = '\nUnified PiicoDev library out of date.  Get the latest module: https://piico.dev/unified \n'
-_dayNames=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+_dayNames=['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
 _I2C_ADDRESS = 0x52
 _SEC = 0x00
 _MIN = 0x01
@@ -92,10 +92,11 @@ class PiicoDev_RV3028(object):
         """Get the weekday and return as a string"""
         return _dayNames[self._weekday]
     @weekday.setter
-    def weekday(self, value):
+    def weekday(self, day):
         """Set the weekday. Accepts a string, checks string is a day name, and stores as integer 0 to 6"""
-        if value in _dayNames: self._weekday = _dayNames.index(value)
-        else: print('Warning: Weekday must be "Monday", "Tuesday", ... "Saturday" or "Sunday" (case-sensitive)')
+        d = day.lower()
+        if d in _dayNames: self._weekday = _dayNames.index(d)
+        else: print('Warning: Weekday must be "monday", "tuesday", ... "saturday" or "sunday"')
 
     def _read(self, reg, N):
         try:
