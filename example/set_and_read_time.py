@@ -7,14 +7,15 @@ from PiicoDev_Unified import sleep_ms
 rtc = PiicoDev_RV3028() # Initialise the RTC module, enable charging
 
 # Set the time by assigning values to rtc's attributes
-rtc.day = 4
+# Replace the following values with the current date/time
+rtc.day = 6
 rtc.month = 5
 rtc.year = 2022
-rtc.hour = 13
-rtc.minute = 41
+rtc.hour = 11
+rtc.minute = 57
 rtc.second = 00
 rtc.ampm = '24' # 'AM','PM' or '24'. Defaults to 24-hr time
-rtc.weekday = 'wednesday' # Rolls over at midnight, works independently of the calendar date
+rtc.weekday = 'friday' # Rolls over at midnight, works independently of the calendar date
 rtc.setDateTime() # Sets the time with the above values
 
 # Get the current time
