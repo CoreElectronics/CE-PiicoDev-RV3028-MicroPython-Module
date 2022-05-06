@@ -31,7 +31,7 @@ hour      | int    | 0 - 23                 |         | Hour of the day
 minute    | int    | 0 - 59                 |         | Minutes
 second    | int    | 0 - 59                 |         | Seconds
 ampm      | string | 'AM', 'PM' or '24'     | '24'    | Chose between AM, PM or 24 hour time
-weekday   | int    | 0 - 6                  |         | Counts from 0 to 6
+weekday   | string | 'monday'...'sunday'    | 'monday'| A string containing the weekday name. Increments at midnight, operates independently of calendar date
 
 ### `PiicoDev_RTC.setDateTime()`
 
