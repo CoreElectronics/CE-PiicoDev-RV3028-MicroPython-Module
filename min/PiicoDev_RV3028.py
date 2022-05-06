@@ -7,7 +7,7 @@ _B='little'
 _A=False
 from PiicoDev_Unified import *
 compat_str='\nUnified PiicoDev library out of date.  Get the latest module: https://piico.dev/unified \n'
-_dayNames=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+_dayNames=['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
 _I2C_ADDRESS=82
 _SEC=0
 _MIN=1
@@ -49,10 +49,10 @@ class PiicoDev_RV3028:
 	@property
 	def weekday(self):'Get the weekday and return as a string';return _dayNames[self._weekday]
 	@weekday.setter
-	def weekday(self,value):
-		'Set the weekday. Accepts a string, checks string is a day name, and stores as integer 0 to 6'
-		if value in _dayNames:self._weekday=_dayNames.index(value)
-		else:print('Warning: Weekday must be "Monday", "Tuesday", ... "Saturday" or "Sunday" (case-sensitive)')
+	def weekday(self,day):
+		'Set the weekday. Accepts a string, checks string is a day name, and stores as integer 0 to 6';d=day.lower()
+		if d in _dayNames:self._weekday=_dayNames.index(d)
+		else:print('Warning: Weekday must be "monday", "tuesday", ... "saturday" or "sunday"')
 	def _read(self,reg,N):
 		try:tmp=int.from_bytes(self.i2c.readfrom_mem(self.addr,reg,N),_B)
 		except:print('Error reading from RV3028');return float('NaN')
