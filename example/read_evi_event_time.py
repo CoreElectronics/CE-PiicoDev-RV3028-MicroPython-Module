@@ -1,6 +1,7 @@
-# Read the EVI pin event time
-
-from PiicoDev_RV3028 import *
+# Read the EVI pin event time.
+# The program will continue listening for an event until one is detected.
+from PiicoDev_RV3028 import PiicoDev_RV3028
+from PiicoDev_Unified import sleep_ms
 
 rtc = PiicoDev_RV3028()
 
@@ -15,4 +16,3 @@ while (rtc.getEventInterrupt() is False):
 print('Event occurred at: ', end='')
 rtc.getDateTime(eventTimestamp=True)
 print(rtc.timestamp(eventTimestamp=True))
-    
