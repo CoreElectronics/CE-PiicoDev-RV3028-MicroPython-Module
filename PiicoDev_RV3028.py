@@ -76,7 +76,7 @@ class PiicoDev_RV3028(object):
         self.addr = addr
  
         try:
-            part = int(self.i2c.readfrom_mem(self.addr, _REG_ID, 1))
+            part = int(self.i2c.readfrom_mem(self.addr, _REG_ID, 1)[0])
         except Exception as e:
             print(i2c_err_str.format(self.addr))
             raise e
@@ -117,7 +117,7 @@ class PiicoDev_RV3028(object):
         return self._read(_UNIX, 4)
     
     def setUnixTime(self, time):
-        self._write(_UNIX, time.to_bytes(4, 'little', False))
+        self._write(_UNIX, time.to_bytes(4, 'little'))
         
     def setBatterySwitchover(self, state = True):
         tmp = self._read(_EE_BACKUP, 1)
@@ -128,7 +128,7 @@ class PiicoDev_RV3028(object):
         else:
             print("Parameter State must be True or False")
             return
-        self._write(_EE_BACKUP, tmp.to_bytes(1, 'little', False))
+        self._write(_EE_BACKUP, tmp.to_bytes(1, 'little'))
                     
     def setTrickleCharger(self, state = True):
         tmp = self._read(_EE_BACKUP, 1)
@@ -139,7 +139,7 @@ class PiicoDev_RV3028(object):
         else:
             print("Parameter State must be True or False")
             return
-        self._write(_EE_BACKUP, tmp.to_bytes(1,'little', False))
+        self._write(_EE_BACKUP, tmp.to_bytes(1,'little'))
         
     def configTrickleCharger(self, R = '3k'):
         tmp = self._read(_EE_BACKUP, 1)
@@ -155,7 +155,7 @@ class PiicoDev_RV3028(object):
         else:
             print("R parameter must be '3k', '5k', '9k', or '15k'")
             return
-        self._write(_EE_BACKUP, tmp.to_bytes(1, 'little', False))
+        self._write(_EE_BACKUP, tmp.to_bytes(1, 'little'))
         
     def configClockOutput(self, clk):
         tmp = self._read(_EE_CLKOUT, 1)
@@ -176,7 +176,7 @@ class PiicoDev_RV3028(object):
         else:
             print("clk parameter must be 32678, 8192, 1024, 64,32, 1, or 0. Values are in units of Hz.")
             return
-        self._write(_EE_CLKOUT, tmp.to_bytes(1, 'little', False))
+        self._write(_EE_CLKOUT, tmp.to_bytes(1, 'little'))
         
     def resetEventInterrupt(self, edge = 'falling'):
         # Clear EVF, _STATUS bit 1
@@ -217,19 +217,19 @@ class PiicoDev_RV3028(object):
     def getDateTime(self, eventTimestamp = False):
         if eventTimestamp is False:
             tmp = self._read(_SEC, 7)
-            date = tmp.to_bytes(7, 'little', False)
+            date = tmp.to_bytes(7, 'little')
             self.day = _bcdDecode(date[4])
             self.month = _bcdDecode(date[5])
             self.year = _bcdDecode(date[6])
         else:
             tmp = self._read(_SECTS, 6)
-            date = tmp.to_bytes(6, 'little', False)
+            date = tmp.to_bytes(6, 'little')
             self.day = _bcdDecode(date[3])
             self.month = _bcdDecode(date[4])
             self.year = _bcdDecode(date[5])
         
         hrFormat = _readBit(self._read(_CTRL2,1), 1)
-        t = tmp.to_bytes(4, 'little', False)
+        t = tmp.to_bytes(7, 'little')
         self.minute = _bcdDecode(t[1])
         self.second = _bcdDecode(t[0])
         self.hour = _bcdDecode(t[2])
@@ -259,7 +259,7 @@ class PiicoDev_RV3028(object):
                 hrs = _clearBit(hrs, 5)
             elif self.ampm == 'PM':
                 hrs = _setBit(hrs, 5)
-        self._write(_CTRL2, tmp.to_bytes(1,'little', False))
+        self._write(_CTRL2, tmp.to_bytes(1,'little'))
         self._write(_SEC, bytes([_bcdEncode(self.second), _bcdEncode(self.minute), hrs, self._weekday, _bcdEncode(self.day), _bcdEncode(self.month), _bcdEncode(year_2_digits)]))
      
     def timestamp(self, eventTimestamp = False):
