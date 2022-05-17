@@ -1,7 +1,7 @@
 _G='falling'
 _F='Parameter State must be True or False'
-_E='24'
-_D=None
+_E=None
+_D='24'
 _C=True
 _B=False
 _A='little'
@@ -15,6 +15,7 @@ _HOUR=2
 _DAY=4
 _MONTH=5
 _YEAR=6
+_ALMIN=7
 _STATUS=14
 _CTRL1=15
 _CTRL2=16
@@ -37,7 +38,7 @@ def _writeTribit(x,n,c):x=_writeBit(x,n,_readBit(c,0));x=_writeBit(x,n+1,_readBi
 def _bcdDecode(val):return(val>>4)*10+(val&15)
 def _bcdEncode(val):return val//10<<4|val%10
 class PiicoDev_RV3028:
-	def __init__(self,bus=_D,freq=_D,sda=_D,scl=_D,addr=_I2C_ADDRESS):
+	def __init__(self,bus=_E,freq=_E,sda=_E,scl=_E,addr=_I2C_ADDRESS):
 		try:
 			if compat_ind>=1:0
 			else:print(compat_str)
@@ -45,14 +46,21 @@ class PiicoDev_RV3028:
 		self.i2c=create_unified_i2c(bus=bus,freq=freq,sda=sda,scl=scl);self.addr=addr
 		try:part=int(self.i2c.readfrom_mem(self.addr,_REG_ID,1)[0])
 		except Exception as e:print(i2c_err_str.format(self.addr));raise e
-		self._weekday=0;self.setBatterySwitchover();self.configTrickleCharger();self.setTrickleCharger();self.getDateTime()
+		self._weekday=0;self.alarmHours=0;self.alarm_ampm='am';self.alarmMinutes=0;self.alarmWeekdayDate=0;self.setBatterySwitchover();self.configTrickleCharger();self.setTrickleCharger();self.getDateTime()
 	@property
-	def weekday(self):'Get the weekday and return as a string';return _dayNames[self._weekday]
+	def weekday(self):'Get the weekday and return as integer 0 to 6';return self._weekday
 	@weekday.setter
 	def weekday(self,day):
-		'Set the weekday. Accepts a string, checks string is a day name, and stores as integer 0 to 6';d=day.lower()
-		if d in _dayNames:self._weekday=_dayNames.index(d)
-		else:print('Warning: Weekday must be "monday", "tuesday", ... "saturday" or "sunday"')
+		'Set the weekday. Accepts an integer 0 to 6'
+		if 0<=day<=6:self._weekday=day
+		else:print('Warning: Weekday must be integer 0 to 6')
+	@property
+	def weekdayName(self):'Get the weekday and return as a string.';return _dayNames[self._weekday]
+	@weekdayName.setter
+	def weekdayName(self,day):
+		'Set the weekday. Accepts a string, checks string is a day name, and stores as integer 0 to 6'
+		if day in _dayNames:self._weekday=_dayNames.index(day)
+		else:print('Warning: weekdayName must be "Monday", "Tuesday", ... "Saturday" or "Sunday"')
 	def _read(self,reg,N):
 		try:tmp=int.from_bytes(self.i2c.readfrom_mem(self.addr,reg,N),_A)
 		except:print('Error reading from RV3028');return float('NaN')
@@ -105,7 +113,7 @@ class PiicoDev_RV3028:
 	def getDateTime(self,eventTimestamp=_B):
 		if eventTimestamp is _B:tmp=self._read(_SEC,7);date=tmp.to_bytes(7,_A);self.day=_bcdDecode(date[4]);self.month=_bcdDecode(date[5]);self.year=_bcdDecode(date[6])
 		else:tmp=self._read(_SECTS,6);date=tmp.to_bytes(6,_A);self.day=_bcdDecode(date[3]);self.month=_bcdDecode(date[4]);self.year=_bcdDecode(date[5])
-		hrFormat=_readBit(self._read(_CTRL2,1),1);t=tmp.to_bytes(7,_A);self.minute=_bcdDecode(t[1]);self.second=_bcdDecode(t[0]);self.hour=_bcdDecode(t[2]);self._weekday=t[3];self.ampm=_E
+		hrFormat=_readBit(self._read(_CTRL2,1),1);t=tmp.to_bytes(7,_A);self.minute=_bcdDecode(t[1]);self.second=_bcdDecode(t[0]);self.hour=_bcdDecode(t[2]);self._weekday=t[3];self.ampm=_D
 		if hrFormat==1:
 			if _readBit(t[2],5)==0:self.ampm='AM'
 			else:hrByte=_clearBit(t[2],5);self.hour=_bcdDecode(hrByte);self.ampm='PM'
@@ -113,14 +121,28 @@ class PiicoDev_RV3028:
 		year_2_digits=self.year
 		if year_2_digits>100:year_2_digits-=2000
 		tmp=self._read(_CTRL2,1)
-		if self.ampm==_E:tmp=_writeBit(tmp,1,0);hrs=_bcdEncode(self.hour)
-		elif self.ampm!=_E:
+		if self.ampm==_D:tmp=_writeBit(tmp,1,0);hrs=_bcdEncode(self.hour)
+		elif self.ampm!=_D:
 			tmp=_writeBit(tmp,1,1);hrs=_bcdEncode(self.hour)
 			if self.ampm=='AM':hrs=_clearBit(hrs,5)
 			elif self.ampm=='PM':hrs=_setBit(hrs,5)
 		self._write(_CTRL2,tmp.to_bytes(1,_A));self._write(_SEC,bytes([_bcdEncode(self.second),_bcdEncode(self.minute),hrs,self._weekday,_bcdEncode(self.day),_bcdEncode(self.month),_bcdEncode(year_2_digits)]))
+	def alarmEnable(self,minutes=_B,hours=_B,weekday=_B,date=_B):
+		'Push alarm settings to the RTC, enable alarm interrupt. Arguments specify which parameters to compare.'
+		if weekday and date:print('Warning: Cannot enable alarm for weeday AND date. Aborting...');return
+		WADA=_B
+		if weekday is _C:WADA=_B
+		if date is _C:WADA=_C
+		tmp=self._read(_CTRL1,1);tmp=_writeBit(tmp,5,WADA);self._write(_CTRL1,tmp.to_bytes(1,_A));h=_bcdEncode(self.alarmHours)
+		if self.ampm!=_D:ampm=self.alarm_ampm=='PM';h=_writeBit(h,5,ampm)
+		m=(not minutes)<<7|_bcdEncode(self.alarmMinutes);h=(not hours)<<7|h;d=(not(weekday or date))<<7|_bcdEncode(self.alarmWeekdayDate);self._write(_ALMIN,bytes([m,h,d]));tmp=self._read(16,1);tmp=_setBit(tmp,3);self._write(16,tmp.to_bytes(1,_A));tmp=self._read(18,1);tmp=_setBit(tmp,2);self._write(18,tmp.to_bytes(1,_A))
+	def checkAlarm(self):
+		tmp=self._read(_STATUS,1)
+		if _readBit(tmp,2):tmp=_writeBit(tmp,2,0);self._write(_STATUS,tmp.to_bytes(1,_A));return _C
+		else:return _B
+	def alarmDisable(self):tmp=self._read(18,1);tmp=_writeBit(tmp,2,1);self._write(15,tmp.to_bytes(0,_A))
 	def timestamp(self,eventTimestamp=_B):
 		A='{:02d}';self.getDateTime(eventTimestamp=eventTimestamp);timestamp=A.format(self.year+2000)+'-'+A.format(self.month)+'-'+A.format(self.day)+' '+A.format(self.hour)+':'+A.format(self.minute)+':'+A.format(self.second)
-		if self.ampm!=_E:timestamp+=' '+self.ampm
+		if self.ampm!=_D:timestamp+=' '+self.ampm
 		return timestamp
 	def clearAllInterrupts(self):self._write(_STATUS,bytes([0]))
