@@ -20,6 +20,7 @@ _HOUR = 0x02
 _DAY = 0x04
 _MONTH = 0x05
 _YEAR = 0x06
+_ALMIN = 0x07
 _STATUS = 0x0E
 _CTRL1 = 0x0F
 _CTRL2 = 0x10
@@ -82,6 +83,10 @@ class PiicoDev_RV3028(object):
             raise e
         
         self._weekday = 0 # integer 0 to 6
+        self.alarmHours=0
+        self.alarm_ampm='am' # for defining alam AM/PM. Ignored if system time is 24-hr
+        self.alarmMinutes=0
+        self.alarmWeekdayDate=0
         self.setBatterySwitchover()
         self.configTrickleCharger()
         self.setTrickleCharger()
@@ -89,14 +94,23 @@ class PiicoDev_RV3028(object):
         
     @property
     def weekday(self):
-        """Get the weekday and return as a string"""
-        return _dayNames[self._weekday]
+        """Get the weekday and return as integer 0 to 6"""
+        return self._weekday
     @weekday.setter
     def weekday(self, day):
+        """Set the weekday. Accepts an integer 0 to 6"""
+        if 0 <= day <= 6: self._weekday = day
+        else: print('Warning: Weekday must be integer 0 to 6')
+    
+    @property
+    def weekdayName(self):
+        """Get the weekday and return as a string."""
+        return _dayNames[self._weekday]
+    @weekdayName.setter
+    def weekdayName(self, day):
         """Set the weekday. Accepts a string, checks string is a day name, and stores as integer 0 to 6"""
-        d = day.lower()
-        if d in _dayNames: self._weekday = _dayNames.index(d)
-        else: print('Warning: Weekday must be "monday", "tuesday", ... "saturday" or "sunday"')
+        if day in _dayNames: self._weekday = _dayNames.index(day)
+        else: print('Warning: weekdayName must be "Monday", "Tuesday", ... "Saturday" or "Sunday"')
 
     def _read(self, reg, N):
         try:
@@ -261,7 +275,55 @@ class PiicoDev_RV3028(object):
                 hrs = _setBit(hrs, 5)
         self._write(_CTRL2, tmp.to_bytes(1,'little'))
         self._write(_SEC, bytes([_bcdEncode(self.second), _bcdEncode(self.minute), hrs, self._weekday, _bcdEncode(self.day), _bcdEncode(self.month), _bcdEncode(year_2_digits)]))
-     
+    
+    def alarmEnable(self, minutes=False, hours=False, weekday=False, date=False):
+        """Push alarm settings to the RTC, enable alarm interrupt. Arguments specify which parameters to compare."""
+        if weekday and date:
+            print("Warning: Cannot enable alarm for weeday AND date. Aborting...")
+            return
+        WADA=False
+        if weekday is True: WADA=False # set the alarm source selection bit (weekday or date)
+        if date is True: WADA=True
+        tmp = self._read(_CTRL1, 1) #read/write WADA bit to control register
+        tmp = _writeBit(tmp, 5, WADA)
+        self._write(_CTRL1, tmp.to_bytes(1,'little'))
+        
+        # handle 24/AM/PM hours
+        h = _bcdEncode(self.alarmHours)
+        if self.ampm != '24':
+            ampm = (self.alarm_ampm == 'PM')
+            h = _writeBit(h, 5, ampm)
+        
+        m = ((not minutes) << 7) | _bcdEncode(self.alarmMinutes)                # set the Alarm Minutes register 0x07: AE_M[7], Minutes[6:0]
+        h = ((not hours) << 7) | h                                              # set the Alarm Hours register   0x08: AE_H[7], Hours[6:0] - 24-hr time only
+        d = ((not (weekday or date)) << 7) | _bcdEncode(self.alarmWeekdayDate)  # set the Alarm Weekday/Date register 0x09: AE_WD[7], day/date [5:0]
+        self._write(_ALMIN, bytes([m,h,d])) # write the alarm registers
+        
+        # enable alarm interrupt signal on INT pin
+        tmp = self._read(0x10, 1)
+        tmp = _setBit(tmp, 3)
+        self._write(0x10, tmp.to_bytes(1,'little'))
+        
+        # clock interrupt mask CAIE
+        tmp = self._read(0x12, 1)
+        tmp = _setBit(tmp, 2)
+        self._write(0x12, tmp.to_bytes(1,'little'))
+        
+    def checkAlarm(self):
+        tmp = self._read(_STATUS, 1)
+        if _readBit(tmp, 2):
+            tmp = _writeBit(tmp, 2, 0) # reset the AF alarm flag
+            self._write(_STATUS, tmp.to_bytes(1,'little'))
+            return True
+        else: return False
+        
+    
+    def alarmDisable(self):
+        # clock interrupt mask
+        tmp = self._read(0x12, 1)
+        tmp = _writeBit(tmp, 2, 1)
+        self._write(0x0F, tmp.to_bytes(0,'little'))
+    
     def timestamp(self, eventTimestamp = False):
         self.getDateTime(eventTimestamp = eventTimestamp)
         timestamp = "{:02d}".format(self.year+2000) + "-" + "{:02d}".format(self.month) + "-" + "{:02d}".format(self.day) + " " + "{:02d}".format(self.hour) + ":" + "{:02d}".format(self.minute) + ":" + "{:02d}".format(self.second)
