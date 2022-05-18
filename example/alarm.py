@@ -7,14 +7,17 @@ from PiicoDev_Unified import sleep_ms
 rtc = PiicoDev_RV3028() # Initialise the RTC module (24-hr mode by default), enable charging
 
 ### Trigger once per hour, at the start of the hour
-rtc.alarmSetup(minutes=4) # Triggers once when the minutes match
+rtc.alarmSetup(minutes=0)
 
-### Trigger once per week on Wednesday (day 2) at 1:23 PM
-# rtc.alarmSetup(weekday=2, hours=13, minutes=23) # Trigger once per week at the scheduled day and time
+### Trigger on the 3rd day of the week (count from zero) at 1:23 PM
+# rtc.alarmSetup(weekday=2, hours=13, minutes=23)
+
+### Trigger on the first day of the month
+# rtc.alarmSetup(date=1)
 
 while True:
     print(rtc.timestamp())
     if rtc.checkAlarm():
         print("Alarm Triggered")
         
-    sleep_ms(1000)
+    sleep_ms(2000)
