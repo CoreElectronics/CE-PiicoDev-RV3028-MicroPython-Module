@@ -1,5 +1,6 @@
 # A basic class to use the Makerverse RV3028 Supercap Real Time Clock on the Raspberry Pi Pico
 # Written by Brenton Schulz, Peter Johnston and Michael Ruppe at Core Electronics
+# 2022 May 18  Add alarm functions - MR
 # 2022 May 4th Use class attributes instead of setters/getters
 # 2021 NOV 5th Initial feature set complete
 #     - Set / get date and time
@@ -12,7 +13,7 @@
 from PiicoDev_Unified import *
 
 compat_str = '\nUnified PiicoDev library out of date.  Get the latest module: https://piico.dev/unified \n'
-_dayNames=['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
+_dayNames=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
 _I2C_ADDRESS = 0x52
 _SEC = 0x00
 _MIN = 0x01
@@ -276,54 +277,62 @@ class PiicoDev_RV3028(object):
         self._write(_CTRL2, tmp.to_bytes(1,'little'))
         self._write(_SEC, bytes([_bcdEncode(self.second), _bcdEncode(self.minute), hrs, self._weekday, _bcdEncode(self.day), _bcdEncode(self.month), _bcdEncode(year_2_digits)]))
     
-    def alarmEnable(self, minutes=False, hours=False, weekday=False, date=False):
-        """Push alarm settings to the RTC, enable alarm interrupt. Arguments specify which parameters to compare."""
+    def alarmSetup(self, minutes=False, hours=False, weekday=False, date=False, interrupt=True):
+        """Push alarm settings to the RTC, enable alarm interrupt output as required. Arguments specify which time parameters to compare."""
+        AE_M=1;AE_H=1;AE_WD=1; # Alarm enable bits (active low)
         if weekday and date:
             print("Warning: Cannot enable alarm for weeday AND date. Aborting...")
             return
         WADA=False
-        if weekday is True: WADA=False # set the alarm source selection bit (weekday or date)
-        if date is True: WADA=True
+        if weekday is not False:
+            WADA=False # set the alarm source selection bit (weekday or date)
+            self.alarmWeekdayDate = int(weekday)
+            AE_WD=0
+        if date is not False:
+            WADA=True
+            self.alarmWeekdayDate = int(date)
+            AE_WD=0
         tmp = self._read(_CTRL1, 1) #read/write WADA bit to control register
         tmp = _writeBit(tmp, 5, WADA)
         self._write(_CTRL1, tmp.to_bytes(1,'little'))
         
         # handle 24/AM/PM hours
+        if hours is not False:
+            self.alarmHours = int(hours)
+            AE_H = 0
         h = _bcdEncode(self.alarmHours)
         if self.ampm != '24':
             ampm = (self.alarm_ampm == 'PM')
             h = _writeBit(h, 5, ampm)
+    
+        if minutes is not False:
+            self.alarmMinutes = int(minutes)
+            AE_M = 0
         
-        m = ((not minutes) << 7) | _bcdEncode(self.alarmMinutes)                # set the Alarm Minutes register 0x07: AE_M[7], Minutes[6:0]
-        h = ((not hours) << 7) | h                                              # set the Alarm Hours register   0x08: AE_H[7], Hours[6:0] - 24-hr time only
-        d = ((not (weekday or date)) << 7) | _bcdEncode(self.alarmWeekdayDate)  # set the Alarm Weekday/Date register 0x09: AE_WD[7], day/date [5:0]
+        m = (AE_M << 7) | _bcdEncode(self.alarmMinutes)       # set the Alarm Minutes register 0x07: AE_M[7], Minutes[6:0]
+        h = (AE_H << 7) | h                                   # set the Alarm Hours register   0x08: AE_H[7], Hours[6:0] - 24-hr time only
+        d = (AE_WD << 7) | _bcdEncode(self.alarmWeekdayDate)  # set the Alarm Weekday/Date register 0x09: AE_WD[7], day/date [5:0]
         self._write(_ALMIN, bytes([m,h,d])) # write the alarm registers
         
-        # enable alarm interrupt signal on INT pin
-        tmp = self._read(0x10, 1)
-        tmp = _setBit(tmp, 3)
-        self._write(0x10, tmp.to_bytes(1,'little'))
+        # Alarm signal on INT pin
+        tmp = self._read(_CTRL2, 1)
+        tmp = _writeBit(tmp, 3, interrupt)
+        self._write(_CTRL2, tmp.to_bytes(1,'little'))
         
-        # clock interrupt mask CAIE
-        tmp = self._read(0x12, 1)
-        tmp = _setBit(tmp, 2)
-        self._write(0x12, tmp.to_bytes(1,'little'))
+    def alarmDisable(self):
+        """Disable alarm, interrupt and clear the Alarm Flag if necessary"""
+        self.alarmSetup(minutes=False, hours=False, weekday=False, date=False, interrupt=False)
+        self.checkAlarm()
         
     def checkAlarm(self):
+        """Return the Alarm Flag status, and reset if triggered"""
         tmp = self._read(_STATUS, 1)
         if _readBit(tmp, 2):
             tmp = _writeBit(tmp, 2, 0) # reset the AF alarm flag
             self._write(_STATUS, tmp.to_bytes(1,'little'))
             return True
         else: return False
-        
-    
-    def alarmDisable(self):
-        # clock interrupt mask
-        tmp = self._read(0x12, 1)
-        tmp = _writeBit(tmp, 2, 1)
-        self._write(0x0F, tmp.to_bytes(0,'little'))
-    
+
     def timestamp(self, eventTimestamp = False):
         self.getDateTime(eventTimestamp = eventTimestamp)
         timestamp = "{:02d}".format(self.year+2000) + "-" + "{:02d}".format(self.month) + "-" + "{:02d}".format(self.day) + " " + "{:02d}".format(self.hour) + ":" + "{:02d}".format(self.minute) + ":" + "{:02d}".format(self.second)
